@@ -1,4 +1,4 @@
-module Main exposing (JsonModel(..), JsonMsg(..), Model(..), Msg(..), User, getUserDetails, init, main, subscriptions, update, userDecoder, view)
+module Main exposing (JsonModel(..), Msg(..), User, getUserDetails, init, main, subscriptions, update, userDecoder, view)
 
 import Browser
 import Debug
@@ -25,11 +25,16 @@ main =
 -- MODEL
 
 
-type Model
+type alias Model =
+    { zmodel : ZModel
+    , jmodel : JsonModel
+    }
+
+
+type ZModel
     = Failure String
     | Loading
     | Success String
-    | JsonSuccess User
 
 
 type JsonModel
@@ -46,15 +51,25 @@ type alias User =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Loading
-    , Http.get
-        { url = "http://localhost:5000"
-        , expect = Http.expectString GotText
-        }
+    ( { zmodel = Loading
+      , jmodel = JLoading
+      }
+    , Cmd.batch
+        [ getBasicDetails
+        , getUserDetails
+        ]
     )
 
 
-getUserDetails : Cmd JsonMsg
+getBasicDetails : Cmd Msg
+getBasicDetails =
+    Http.get
+        { url = "http://localhost:5000"
+        , expect = Http.expectString GotText
+        }
+
+
+getUserDetails : Cmd Msg
 getUserDetails =
     Http.get
         { url = "http://localhost:5000/json"
@@ -76,11 +91,7 @@ userDecoder =
 
 type Msg
     = GotText (Result Http.Error String)
-    | GotUserx (Result Http.Error User)
-
-
-type JsonMsg
-    = GotUser (Result Http.Error User)
+    | GotUser (Result Http.Error User)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -88,22 +99,27 @@ update msg model =
     case msg of
         GotText result ->
             case result of
-                Ok fullText ->
-                    ( Success fullText, Cmd.none )
+                Ok fulltext ->
+                    ( { model | zmodel = Success fulltext }, Cmd.none )
 
                 Err zzz ->
-                    ( Failure (Debug.toString zzz), Cmd.none )
+                    ( { model | zmodel = Success (Debug.toString zzz) }, Cmd.none )
 
-        GotUserx result ->
+        GotUser result ->
             case result of
                 Ok user ->
-                    ( JsonSuccess user, Cmd.none )
+                    ( { model | jmodel = JSuccess user }, Cmd.none )
 
-                Err zzz ->
-                    ( Failure (Debug.toString zzz), Cmd.none )
+                Err zzza ->
+                    ( { model | jmodel = JFailure (Debug.toString zzza) }, Cmd.none )
 
 
 
+--         case result of
+--             Ok fullText ->
+--                 ( model.zmodel Success fullText, Cmd.none )
+--             Err zzz ->
+--                 ( Failure (Debug.toString zzz), Cmd.none )
 -- SUBSCRIPTIONS
 
 
@@ -120,7 +136,7 @@ view : Model -> Html Msg
 view model =
     div []
         [ div [] [ text "acacac" ]
-        , case model of
+        , case model.zmodel of
             Failure zzz ->
                 text ("I was unable to load your book." ++ zzz)
 
@@ -129,7 +145,13 @@ view model =
 
             Success fullText ->
                 pre [] [ text fullText ]
+        , case model.jmodel of
+            JFailure zzza ->
+                text ("I was unable to load the bloody json." ++ zzza)
 
-            JsonSuccess aaa ->
-                div [] [ text aaa.name ]
+            JLoading ->
+                text "Loading..."
+
+            JSuccess user ->
+                div [] [ text (user.name ++ " is " ++ String.fromInt user.age ++ " years old") ]
         ]
