@@ -17,3 +17,30 @@ def returnjson():
          "occupation": "worker",
          "age": 12
          })
+
+
+@app.route("/complexjson")
+def complexjson():
+    return jsonify({
+        "name": "john",
+        # "occupation": "12",
+        "children": [
+                {
+                    "name": "john the second",
+                    "school": "english"
+                },
+            {
+                    "name": "jane",
+                    "school": "english",
+                    "language": "french"
+                    }
+        ],
+        "animals": {
+            "rabbits": [{"name": "seahorse"}],
+            "dogs": [{"name": "louse"}]
+        }
+    })
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
