@@ -6,6 +6,7 @@ import Html exposing (Html, div, pre, text)
 import Http
 import Json.Decode exposing (Decoder, at, field, int, map, map2, string)
 import String exposing (fromInt)
+import ZZZ
 
 
 
@@ -108,19 +109,11 @@ update msg model =
         GotUser result ->
             case result of
                 Ok user ->
+                    -- The | operator serve to mean update the field -> so it's more like take current model and update jmodel with JSuccess and user
                     ( { model | jmodel = JSuccess user }, Cmd.none )
 
                 Err zzza ->
                     ( { model | jmodel = JFailure (Debug.toString zzza) }, Cmd.none )
-
-
-
---         case result of
---             Ok fullText ->
---                 ( model.zmodel Success fullText, Cmd.none )
---             Err zzz ->
---                 ( Failure (Debug.toString zzz), Cmd.none )
--- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
@@ -154,4 +147,5 @@ view model =
 
             JSuccess user ->
                 div [] [ text (user.name ++ " is " ++ String.fromInt user.age ++ " years old") ]
+        , ZZZ.zzz
         ]
